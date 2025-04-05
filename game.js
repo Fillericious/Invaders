@@ -25,7 +25,7 @@ let mainMenu = true;
 function setup() {
     createCanvas(600, 600);
     resetPlayer();
-    createAliens();
+    mainMenu = true;  // Don't create aliens until game starts
 }
 
 function resetPlayer() {
@@ -58,6 +58,10 @@ function createAliens() {
 
 function draw() {
     background(0);
+    if (mainMenu) {
+        displayMainMenu();
+        return;
+    }
     if (gameOver) {
         displayGameOver();
         return;
@@ -79,6 +83,18 @@ function draw() {
         gameWin = true;
         noLoop();
     }
+}
+
+function displayMainMenu() {
+    fill(0, 255, 0);
+    textSize(64);
+    textAlign(CENTER, CENTER);
+    text("SPACE INVADERS", width / 2, height / 2 - 80);
+
+    textSize(24);
+    text("Press SPACE to Start", width / 2, height / 2);
+    text("Move: ← →", width / 2, height / 2 + 40);
+    text("Shoot: SPACE", width / 2, height / 2 + 70);
 }
 
 function handlePlayer() {
@@ -123,6 +139,12 @@ function handlePlayerDeath() {
 }
 
 function keyPressed() {
+    if (mainMenu && keyCode === 32) {
+        mainMenu = false;
+        createAliens();
+        return;
+    }
+
     if (gameOver && (key === 'r' || key === 'R')) {
         restartGame();
         return;
@@ -320,8 +342,8 @@ function restartGame() {
         alienDirection = 1;
         alienSpeed = 1;
         gameOver = false;
+        mainMenu = true;  // Return to main menu instead of starting right away
         resetPlayer();
-        createAliens();
         loop();
     }
     if (gameWin) {
