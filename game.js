@@ -23,7 +23,7 @@ let playerHitTimer = 0;
 let mainMenu = true;
 
 function setup() {
-    createCanvas(600, 600);
+    createCanvas(800, 600);
     resetPlayer();
     mainMenu = true;  // Don't create aliens until game starts
 }
@@ -103,16 +103,30 @@ function handlePlayer() {
         if (playerHitTimer <= 0) {
             playerHit = false;
         }
-        fill(frameCount % 10 < 5 ? color(255, 0, 0) : color(0, 255, 0));
+        fill(frameCount % 5 < 5 ? color(255, 0, 0) : color(0, 255, 0));
     } else {
         fill(0, 255, 0);
     }
 
     noStroke();
+    // draw flames
+    fill(random(128, 255), random(20, 128), 0);
+    rect(player.x - 12, player.y + 20, 3, 10);
+    rect(player.x + 12, player.y + 20, 3, 10);
+    fill(random(0, 128), random(0, 128), random(128, 255));
+    rect(player.x - 12, player.y + 25, 3, 2);
+    rect(player.x + 12, player.y + 25, 3, 2);
+    fill(0, 255, 0);
+    // draw ship
     triangle(
         player.x, player.y - player.size / 2,
         player.x - player.size / 2, player.y + player.size / 2,
         player.x + player.size / 2, player.y + player.size / 2
+    );
+    arc(
+        player.x, player.y + 16,
+        player.size, player.size + 10,
+        PI, TWO_PI
     );
 
     if (keyIsDown(LEFT_ARROW) && player.x > player.size / 2) {
@@ -185,7 +199,7 @@ function handleAliens() {
 
     for (let alien of aliens) {
         if (!alien.alive) continue;
-        if (alien.x >= width - alienSize - 6 || alien.x <= 0) {
+        if (alien.x >= width - alienSize / 2 || alien.x <= 0 + alienSize / 2) {
             alienDirection *= -1;
             aliensMoveDown = true;
             break;
@@ -211,8 +225,9 @@ function handleAliens() {
         alien.x += alienSpeed * alienDirection;
 
         fill(255, 0, 255);
+        // circle(alien.x, alien.y, alien.size);
         textSize(alienSize);
-        text("👾", alien.x, alien.y);
+        text("👾", alien.x - 20, alien.y - 12);
 
         if (random(1) < alienFireRate) {
             let frontAlien = true;
@@ -255,7 +270,7 @@ function checkCollisions() {
 
             if (a.alive) {
                 let distance = dist(b.x, b.y, a.x, a.y);
-                if (distance < b.size / 2 + a.size) {
+                if (distance < b.size / 2 + a.size / 2) {
                     a.alive = false;
                     playerBullets.splice(i, 1);
                     score += 10;
