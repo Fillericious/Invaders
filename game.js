@@ -23,7 +23,7 @@ let playerHitTimer = 0;
 let mainMenu = true;
 
 function setup() {
-    createCanvas(800, 600);
+    createCanvas(700, 525);
     resetPlayer();
     mainMenu = true;  // Don't create aliens until game starts
 }
