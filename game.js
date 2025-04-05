@@ -2,6 +2,9 @@ let player;
 let playerBullets = [];
 let aliens = [];
 let alienBullets = [];
+let explosionParticles = []; // Added for explosion effects
+let recoveryTime = 120; // 2 seconds at 60fps
+let borderFlashColor = 'rgb(0, 255, 0)';
 
 let alienDirection = 1;
 let aliensMoveDown = false;
@@ -38,6 +41,9 @@ function resetPlayer() {
     };
     playerHit = false;
     playerHitTimer = 0;
+    explosionParticles = []; // Clear explosion particles
+    const mainElement = document.querySelector('main');
+    mainElement.style.borderColor = 'rgb(0, 255, 0)'; // Reset border color
 }
 
 function createAliens() {
@@ -138,16 +144,71 @@ function handlePlayer() {
 }
 
 function handlePlayerDeath() {
-    fill(255, 0, 0);
-    textSize(30);
-    textAlign(CENTER, CENTER);
-    text("PLAYER HIT!", width / 2, height / 2);
+    // Keep drawing the game
+    handleAliens();
+    handleAlienBullets();
+    handlePlayerBullets();
+    drawUI();
 
-    if (frameCount % 60 === 0) {
-        if (lives > 0) {
-            resetPlayer();
-        } else {
-            gameOver = true;
+    // Draw explosion effect
+    updateExplosion();
+
+    // Flash border color faster (every 20 frames)
+    const mainElement = document.querySelector('main');
+    if (frameCount % 20 < 5) {
+        mainElement.style.borderColor = 'rgb(255, 0, 0)'; // Red
+    } else {
+        mainElement.style.borderColor = 'rgb(255, 255, 255)'; // White
+    }
+
+    // Show recovery countdown
+    fill(255, 0, 0);
+    strokeWeight(4);
+    stroke(180,0,255);
+    textSize(90);
+    textAlign(CENTER, CENTER);
+    text(recoveryTime / 10, width / 2, height / 2);
+    noStroke();
+
+    if (frameCount % 10 === 0) {
+        recoveryTime -= 10;
+        if (recoveryTime <= 0) {
+            if (lives > 0) {
+                resetPlayer();
+                mainElement.style.borderColor = 'rgb(0, 255, 0)'; // Reset to green
+            } else {
+                gameOver = true;
+            }
+        }
+    }
+}
+
+function createExplosion(x, y) {
+    for (let i = 0; i < 20; i++) {
+        explosionParticles.push({
+            x: x,
+            y: y,
+            vx: random(-3, 3),
+            vy: random(-3, 3),
+            life: 60
+        });
+    }
+}
+
+function updateExplosion() {
+    for (let i = explosionParticles.length - 1; i >= 0; i--) {
+        let p = explosionParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life--;
+
+        let alpha = map(p.life, 60, 0, 255, 0);
+        fill(255, 0, 0, alpha);
+        noStroke();
+        circle(p.x, p.y, 4);
+
+        if (p.life <= 0) {
+            explosionParticles.splice(i, 1);
         }
     }
 }
@@ -290,6 +351,8 @@ function checkCollisions() {
             playerHit = true;
             playerHitTimer = 60;
             player.alive = false;
+            recoveryTime = 90; // Reset recovery time
+            createExplosion(player.x, player.y); // Add explosion effect
             break;
         }
     }
@@ -329,8 +392,12 @@ function displayGameOver() {
     textAlign(CENTER, CENTER);
     text("GAME OVER", width / 2, height / 2 - 80);
     fill(128, 0, 255);
+    strokeWeight(2);
+    stroke(0,255,0);
     textSize(40);
     text("Final Score: " + score, width / 2, height / 2);
+
+    noStroke();
     textSize(20);
     fill(0, 255, 0);
     text("Press 'R' to Restart", width / 2, height / 2 + 80);
@@ -343,7 +410,10 @@ function displayWin() {
     textAlign(CENTER, CENTER);
     text("YOU WIN!", width / 2, height / 2 - 40);
     textSize(20);
+    strokeWeight(2);
+    stroke(0,255,0);
     text("Final Score: " + score, width / 2, height / 2 + 20);
+    noStroke();
     fill(255, 0, 0);
     text("Press 'Y' to Continue", width / 2, height / 2 + 60);
 }
