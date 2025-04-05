@@ -1,0 +1,18 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #000;
+    /* Black background for space */
+    font-family: 'Courier New', Courier, monospace;
+    /* Retro font */
+}
+
+main {
+    border: 1px solid #0f0;
+    /* Green border like old monitors */
+}
