@@ -339,7 +339,7 @@ function handleAlienBullets() {
 }
 
 function checkCollisions() {
-    if (!player.alive || playerHit) return;
+    if (!player.alive) return;
 
     for (let i = playerBullets.length - 1; i >= 0; i--) {
         for (let j = aliens.length - 1; j >= 0; j--) {
