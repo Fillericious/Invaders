@@ -159,7 +159,9 @@ function setup() {
     const mainElement = document.querySelector('main');
     mainElement.style.borderColor = 'rgb(0, 255, 0)'; // Reset border color
     recoveryTime = RECOVERY_TIME_FRAMES;
+    resetPlayer();
 }
+
 
 function createAliens(alienSpeed) {
     aliens = [];
