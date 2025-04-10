@@ -151,6 +151,7 @@ let aliensMoveDown = false;
 let score = 0; // Player's score
 let lives = 3; // Player's remaining lives
 let mainMenu = true; // Flag to indicate if the game is in the main menu
+let gameOver = false;
 
 function setup() {
     createCanvas(700, 525);
