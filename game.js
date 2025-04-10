@@ -175,7 +175,7 @@ function createAliens(alienSpeed) {
 function draw() {
     background(0);
     if (mainMenu) {
-        displayMainMenu();
+        ui.drawMainMenu();
         return;
     }
     if (gameOver ) {
@@ -260,7 +260,7 @@ function keyPressed() {
         createAliens();
         return;
     }
-
+    
     if (gameOver && (key === 'r' || key === 'R')) {
         restartGame();
         return;
