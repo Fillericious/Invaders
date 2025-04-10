@@ -20,6 +20,13 @@ Defend Earth from waves of alien invaders! Shoot down the aliens before they rea
 - Visual feedback when hit
 - Main menu and game over screens
 
+## Screenshot
+
+<!-- Add a screenshot of the game here -->
+
+## Technical Details
+This game is built using JavaScript and the p5.js library. The code is organized using classes and constants to improve readability and maintainability.
+
 ## Setup
 1. Make sure you have a web browser that supports JavaScript
 2. Open `index.html` in your browser
@@ -28,4 +35,7 @@ Defend Earth from waves of alien invaders! Shoot down the aliens before they rea
 5. Press Y to continue to the next wave after winning
 
 ## Credits
-Created using p5.js library
+Created by Code Master using the p5.js library.
+
+## Contribute
+Feel free to contribute to this project or contact me if you have any suggestions!
