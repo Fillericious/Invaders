@@ -178,14 +178,14 @@ function draw() {
         ui.drawMainMenu();
         return;
     }
-    if (gameOver ) {
-        displayGameOver();
+    if (gameOver) {
+        ui.drawGameOver();
         return;
     }
     if (!player.alive) {
         handlePlayerDeath();
         return;
-    }
+    } 
 
     handlePlayer();
     handlePlayerBullets();
@@ -195,7 +195,7 @@ function draw() {
     ui.draw();
 
     if (aliens.length === 0) {
-        displayWin();
+        ui.drawWin();
         gameWin = true;
         noLoop();
     }
