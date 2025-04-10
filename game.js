@@ -10,10 +10,10 @@ const PLAYER_BULLET_SPEED = -7;
 const ALIEN_BULLET_SPEED = 4;
 const PLAYER_SIZE = 30;
 const COLORS = {
-    PLAYER_COLOR: 'rgb(0, 255, 0)',
+    PLAYER_COLOR: 'rgb(0, 182, 0)',
     ALIEN_COLOR: 'rgb(255, 0, 255)',
     PLAYER_BULLET_COLOR: 'rgb(0, 255, 0)',
-    ALIEN_BULLET_COLOR: 'rgb(255, 255, 255)',
+    ALIEN_BULLET_COLOR: 'rgb(255, 94, 0)',
     EXPLOSION_COLOR: 'rgb(255, 0, 0)',
     BACKGROUND_COLOR: 'rgb(0,0,0)',
     TEXT_COLOR: 'rgb(0, 255, 0)',
@@ -25,6 +25,21 @@ const COLORS = {
     SCORE_COLOR: 'rgb(0, 255, 0)',
     LIVES_COLOR: 'rgb(0, 255, 0)'
 };
+
+let player; // Player object
+let playerBullets = []; // Array to hold player bullets
+let aliens = []; // Array to hold aliens
+let alienBullets = []; // Array to hold alien bullets
+let explosionParticles = [];
+let alienDirection = 1;
+let alienSpeed = 1;
+let aliensMoveDown = false;
+let score = 0; // Player's score
+let lives = 3; // Player's remaining lives
+let mainMenu = true; // Flag to indicate if the game is in the main menu
+let gameOver = false;
+let gameWin = false; // Player has won the game
+let recoveryTime = 0; // Add this line to declare recoveryTime
 
 
 class Bullet {
@@ -40,7 +55,7 @@ class Bullet {
     }
 
     draw() {
-        fill(COLORS.PLAYER_BULLET_COLOR);
+        fill(this.speed < 0 ? color(0, 255, 0) : COLORS.ALIEN_BULLET_COLOR);
         rectMode(CENTER);
         rect(this.x, this.y, this.size, this.size * 2);
     }
@@ -66,22 +81,32 @@ class Player {
     }
 
     draw() {
-        if (this.hit) {
-            fill(frameCount % 5 < 5 ? color(255, 0, 0) : color(COLORS.PLAYER_COLOR));
+        noStroke();
+        // Flash between red and transparent during recovery
+        if (recoveryTime > 0) {
+            if (frameCount % 10 < 5) {
+                fill(color(255, 0, 0, 128));
+            } else {
+                fill(color(255, 255, 255, 64));
+            }
+        } else if (this.hit) {
+            fill(color(255, 0, 0));
         } else {
-            fill(COLORS.PLAYER_COLOR);
+            fill(color(0, 255, 0));
         }
 
-        noStroke();
         // draw flames
-        fill(random(128, 255), random(20, 128), 0);
-        rect(this.x - 12, this.y + 20, 3, 10);
-        rect(this.x + 12, this.y + 20, 3, 10);
-        fill(random(0, 128), random(0, 128), random(128, 255));
-        rect(this.x - 12, this.y + 25, 3, 2);
-        rect(this.x + 12, this.y + 25, 3, 2);
-        fill(COLORS.PLAYER_COLOR);
+        if (!this.hit) {
+            fill(color(random(128, 255), random(20, 128), 0));
+            rect(this.x - 12, this.y + 20, 3, 10);
+            rect(this.x + 12, this.y + 20, 3, 10);
+            fill(color(random(0, 128), random(0, 128), random(128, 255)));
+            rect(this.x - 12, this.y + 25, 3, 2);
+            rect(this.x + 12, this.y + 25, 3, 2);
+        }
+
         // draw ship
+        fill(color(0, 255, 0, recoveryTime > 0 ? (frameCount % 10 < 5 ? 128 : 64) : 255));
         triangle(
             this.x, this.y - this.size / 2,
             this.x - this.size / 2, this.y + this.size / 2,
@@ -98,10 +123,11 @@ class Player {
         this.alive = false;
         this.hit = true;
         this.hitTimer = 60;
+        recoveryTime = RECOVERY_TIME_FRAMES;
     }
 
     shoot() {
-        return new Bullet(this.x, this.y - this.size / 2, 5, -7);
+        return new Bullet(this.x, this.y - this.size / 2, 5, PLAYER_BULLET_SPEED);
     }
 
     update() {
@@ -122,9 +148,9 @@ class Alien {
     }
 
     draw() {
-        fill(255, 0, 255);
+        fill(color(255, 0, 255));
         textSize(this.size);
-        text("👾", this.x - 20, this.y - 12); // use an emoji to draw the alien.
+        text("👾", this.x - 20, this.y - 12);
     }
 
     isOffScreen() {
@@ -132,7 +158,7 @@ class Alien {
     }
 
     shoot() {
-        return new Bullet(this.x, this.y + this.size / 2, 6, 4);
+        return new Bullet(this.x, this.y + this.size / 2, 8, ALIEN_BULLET_SPEED); // Increased size from 6 to 8
     }
     update() {
         this.draw();
@@ -140,26 +166,12 @@ class Alien {
 
 }
 
-let player; // Player object
-let playerBullets = []; // Array to hold player bullets
-let aliens = []; // Array to hold aliens
-let alienBullets = []; // Array to hold alien bullets
-let explosionParticles = [];
-let alienDirection = 1;
-let alienSpeed = 1;
-let aliensMoveDown = false;
-let score = 0; // Player's score
-let lives = 3; // Player's remaining lives
-let mainMenu = true; // Flag to indicate if the game is in the main menu
-let gameOver = false;
-let gameWin = false; // Player has won the game
-
 function setup() {
     createCanvas(700, 525);
     ui = new UI();
-    const mainElement = document.querySelector('main');
-    mainElement.style.borderColor = 'rgb(0, 255, 0)'; // Reset border color
-    recoveryTime = RECOVERY_TIME_FRAMES;
+    const gameContainer = document.querySelector('.game-container');
+    gameContainer.style.borderColor = COLORS.BORDER_COLOR;
+    recoveryTime = 0;  // Initialize to 0 since we're not in recovery mode at start
     resetPlayer();
 }
 
@@ -206,24 +218,38 @@ function draw() {
 }
 
 function handlePlayerDeath() {
+    // Continue game animation
+    handleAliens();
+    handleAlienBullets();
+    handlePlayerBullets();
+    
+    // Update player and effects
     player.update();
     updateExplosion();
     ui.drawLives();
-    const mainElement = document.querySelector('main');
+    
+    // Flash border
+    const gameContainer = document.querySelector('.game-container');
     if (frameCount % 20 < 5) {
-        mainElement.style.borderColor = 'rgb(255, 0, 0)'; // Red
+        gameContainer.style.borderColor = 'rgb(255, 0, 0)';
     } else {
-        mainElement.style.borderColor = 'rgb(255, 255, 255)'; // White
+        gameContainer.style.borderColor = 'rgb(255, 255, 255)';
     }
+    
+    // Show recovery countdown
     fill(COLORS.RECOVERY_COLOR);
     stroke(180, 0, 255);
     textSize(90);
     textAlign(CENTER, CENTER);
-    text(recoveryTime / 10, width / 2, height / 2);
-    if (frameCount % 10 === 0) {
-        recoveryTime -= 10;
-        if (recoveryTime <= 0) {
+    text(Math.ceil(recoveryTime / 60), width / 2, height / 2);
+    
+    // Update recovery timer
+    recoveryTime--;
+    if (recoveryTime <= 0) {
+        if (lives > 0) {
             resetPlayer();
+        } else {
+            gameOver = true;
         }
     }
 }
@@ -248,7 +274,7 @@ function updateExplosion() {
         p.life--;
 
         let alpha = map(p.life, 60, 0, 255, 0);
-        fill(COLORS.EXPLOSION_COLOR, alpha);
+        fill(color(255, 0, 0, alpha));
         noStroke();
         circle(p.x, p.y, 4);
 
@@ -269,9 +295,9 @@ function keyPressed() {
         restartGame();
         return;
     }
-    if (gameOver || !player.alive) return;
 
-    if (keyCode === 32) {
+    // Allow shooting during normal gameplay
+    if (keyCode === 32 && !gameOver && !mainMenu && player.alive && recoveryTime <= 0) {
         playerBullets.push(player.shoot());
     }
 
@@ -340,7 +366,7 @@ function handleAlienBullets() {
 }
 
 function checkCollisions() {
-    if (!player.alive) return;
+    if (!player.alive || recoveryTime > 0) return;
 
     for (let i = playerBullets.length - 1; i >= 0; i--) {
         for (let j = aliens.length - 1; j >= 0; j--) {
@@ -366,31 +392,39 @@ function checkCollisions() {
         let distance = dist(b.x, b.y, player.x, player.y);
 
         if (distance < b.size / 2 + PLAYER_SIZE / 2) {
+            alienBullets.splice(i, 1);
+            lives--;
             player.handleDeath();
             createExplosion(player.x, player.y);
+            if (lives <= 0) {
+                gameOver = true;
+            }
             break;
         }
     }
 }
 let ui; // UI object
-class  UI {
+class UI {
     draw() {
-        this.drawScore();
-        this.drawLives();
-        this.drawMainMenu();
+        if (!mainMenu) {
+            this.drawScore();
+            this.drawLives();
+        }
     }
+    
     drawScore() {
         stroke(0);
         strokeWeight(2);
-        fill(COLORS.SCORE_COLOR);
+        fill(color(0, 255, 0));
         textSize(20);
         textAlign(LEFT, TOP);
         text("Score: " + score, 10, 10);
     }
+
     drawLives() {
         stroke(0);
         strokeWeight(2);
-        fill(COLORS.LIVES_COLOR);
+        fill(color(0, 255, 0));
         textSize(20);
         textAlign(RIGHT, TOP);
         text("Lives: " + "♥".repeat(lives), width - 10, 10);
@@ -400,7 +434,7 @@ class  UI {
         if (mainMenu) {
             stroke(0);
             strokeWeight(3);
-            fill(COLORS.MAIN_TEXT_COLOR);
+            fill(color(0, 255, 0));
             textSize(64);
             textAlign(CENTER, CENTER);
             text("SPACE INVADERS", width / 2, height / 2 - 80);
@@ -416,7 +450,7 @@ class  UI {
         if (gameOver) {
             stroke(0);
             strokeWeight(2);
-            fill(COLORS.GAME_OVER_TEXT_COLOR);
+            fill(color(255, 0, 0));
             textSize(64);
             textAlign(CENTER, CENTER);
             text("GAME OVER", width / 2, height / 2 - 80);
@@ -431,7 +465,7 @@ class  UI {
         if (gameWin) {
             stroke(0);
             strokeWeight(2);
-            fill(COLORS.WIN_TEXT_COLOR);
+            fill(color(0, 255, 0));
             textSize(64);
             textAlign(CENTER, CENTER);
             text("YOU WIN!", width / 2, height / 2 - 40);
@@ -461,10 +495,12 @@ function resetGame() {
 
 function resetPlayer() {
     player = new Player(width / 2, height - 40, PLAYER_SIZE, PLAYER_SPEED);
-    const mainElement = document.querySelector('main');
-    mainElement.style.borderColor = COLORS.BORDER_COLOR;
-
+    player.alive = true;
+    player.hit = false;
+    const gameContainer = document.querySelector('.game-container');
+    gameContainer.style.borderColor = COLORS.BORDER_COLOR;
     explosionParticles = [];
+    recoveryTime = 0;
 }
 
 function restartGame() {
