@@ -82,14 +82,7 @@ class Player {
 
     draw() {
         noStroke();
-        // Flash between red and transparent during recovery
-        if (recoveryTime > 0) {
-            if (frameCount % 10 < 5) {
-                fill(color(255, 0, 0, 128));
-            } else {
-                fill(color(255, 255, 255, 64));
-            }
-        } else if (this.hit) {
+        if (this.hit) {
             fill(color(255, 0, 0));
         } else {
             fill(color(0, 255, 0));
@@ -105,8 +98,8 @@ class Player {
             rect(this.x + 12, this.y + 25, 3, 2);
         }
 
-        // draw ship
-        fill(color(0, 255, 0, recoveryTime > 0 ? (frameCount % 10 < 5 ? 128 : 64) : 255));
+        // draw ship (no transparency or pulsating)
+        fill(color(0, 255, 0));
         triangle(
             this.x, this.y - this.size / 2,
             this.x - this.size / 2, this.y + this.size / 2,
@@ -198,6 +191,10 @@ function draw() {
         ui.drawGameOver();
         return;
     }
+    if (gameWin) {
+        ui.drawWin();
+        return;
+    }
     if (!player.alive) {
         handlePlayerDeath();
         return;
@@ -211,9 +208,7 @@ function draw() {
     ui.draw();
 
     if (aliens.length === 0) {
-        ui.drawWin();
         gameWin = true;
-        noLoop();
     }
 }
 
@@ -287,24 +282,21 @@ function updateExplosion() {
 function keyPressed() {
     if (mainMenu && keyCode === 32) {
         mainMenu = false;
-        createAliens();
+        createAliens(alienSpeed);
         return;
     }
-    
     if (gameOver && (key === 'r' || key === 'R')) {
         restartGame();
         return;
     }
-
-    // Allow shooting during normal gameplay
     if (keyCode === 32 && !gameOver && !mainMenu && player.alive && recoveryTime <= 0) {
         playerBullets.push(player.shoot());
     }
-
     if (gameWin && (key === 'y' || key === 'Y')) {
-        restartGame();
+        restartGame(true); // Next round, keep score, increase speed
     }
 }
+
 function handlePlayer() {
     player.update();
     if (keyIsDown(LEFT_ARROW)) player.move(-1);
@@ -500,10 +492,38 @@ function resetPlayer() {
     const gameContainer = document.querySelector('.game-container');
     gameContainer.style.borderColor = COLORS.BORDER_COLOR;
     explosionParticles = [];
-    recoveryTime = 0;
+    recoveryTime = 0; // Ensure player is not in recovery state
 }
 
-function restartGame() {
-    resetGame();
+function restartGame(nextRound = false) {
+    if (nextRound) {
+        // Increase alien speed by 10% each round
+        alienSpeed *= 1.1;
+        playerBullets = [];
+        aliens = [];
+        alienBullets = [];
+        alienDirection = 1;
+        mainMenu = false;
+        gameWin = false;
+        gameOver = false;
+        resetPlayer();
+        aliensMoveDown = false;
+        recoveryTime = 0; // Ensure player is not in recovery state
+        createAliens(alienSpeed);
+    } else {
+        score = 0;
+        lives = 3;
+        playerBullets = [];
+        aliens = [];
+        alienBullets = [];
+        alienDirection = 1;
+        alienSpeed = 1;
+        mainMenu = true;
+        gameWin = false;
+        gameOver = false;
+        resetPlayer();
+        aliensMoveDown = false;
+        recoveryTime = 0; // Ensure player is not in recovery state
+    }
     loop();
 }
