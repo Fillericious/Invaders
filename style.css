@@ -15,6 +15,20 @@ body {
     height: 525px;
 }
 
+#mobile-controls {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 20px;
+    z-index: 10;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    #mobile-controls { display: none; }
+}
+
 /* Responsive adjustments */
 @media (max-width: 700px) {
     .game-container {

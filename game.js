@@ -35,12 +35,45 @@ let alienDirection = 1;
 let alienSpeed = 1;
 let aliensMoveDown = false;
 let score = 0; // Player's score
+let highScore = localStorage.getItem('spaceInvadersHighScore') || 0;
 let lives = 3; // Player's remaining lives
 let mainMenu = true; // Flag to indicate if the game is in the main menu
 let gameOver = false;
 let gameWin = false; // Player has won the game
 let recoveryTime = 0; // Add this line to declare recoveryTime
 
+let leftPressed = false, rightPressed = false;
+
+// Add mobile control event listeners only if the elements exist
+window.addEventListener('DOMContentLoaded', () => {
+    const leftBtn = document.getElementById('left-btn');
+    const rightBtn = document.getElementById('right-btn');
+    const shootBtn = document.getElementById('shoot-btn');
+    if (leftBtn) {
+        leftBtn.addEventListener('touchstart', () => leftPressed = true);
+        leftBtn.addEventListener('touchend', () => leftPressed = false);
+        leftBtn.addEventListener('mousedown', () => leftPressed = true);
+        leftBtn.addEventListener('mouseup', () => leftPressed = false);
+    }
+    if (rightBtn) {
+        rightBtn.addEventListener('touchstart', () => rightPressed = true);
+        rightBtn.addEventListener('touchend', () => rightPressed = false);
+        rightBtn.addEventListener('mousedown', () => rightPressed = true);
+        rightBtn.addEventListener('mouseup', () => rightPressed = false);
+    }
+    if (shootBtn) {
+        shootBtn.addEventListener('touchstart', () => {
+            if (!gameOver && !mainMenu && player.alive && recoveryTime <= 0) {
+                playerBullets.push(player.shoot());
+            }
+        });
+        shootBtn.addEventListener('mousedown', () => {
+            if (!gameOver && !mainMenu && player.alive && recoveryTime <= 0) {
+                playerBullets.push(player.shoot());
+            }
+        });
+    }
+});
 
 class Bullet {
     constructor(x, y, size, speed) {
@@ -299,8 +332,8 @@ function keyPressed() {
 
 function handlePlayer() {
     player.update();
-    if (keyIsDown(LEFT_ARROW)) player.move(-1);
-    else if (keyIsDown(RIGHT_ARROW)) player.move(1);
+    if (keyIsDown(LEFT_ARROW) || leftPressed) player.move(-1);
+    else if (keyIsDown(RIGHT_ARROW) || rightPressed) player.move(1);
 }
 
 function handlePlayerBullets() {
@@ -435,11 +468,16 @@ class UI {
             text("Press SPACE to Start", width / 2, height / 2);
             text("Move: ← →", width / 2, height / 2 + 40);
             text("Shoot: SPACE", width / 2, height / 2 + 70);
+            text("High Score: " + highScore, width / 2, height / 2 + 110);
         }
     }
 
     drawGameOver() {
         if (gameOver) {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('spaceInvadersHighScore', highScore);
+            }
             stroke(0);
             strokeWeight(2);
             fill(color(255, 0, 0));
@@ -448,6 +486,7 @@ class UI {
             text("GAME OVER", width / 2, height / 2 - 80);
             textSize(40);
             text("Final Score: " + score, width / 2, height / 2);
+            text("High Score: " + highScore, width / 2, height / 2 + 40);
             textSize(20);
             text("Press 'R' to Restart", width / 2, height / 2 + 80);
         }
@@ -455,6 +494,10 @@ class UI {
 
     drawWin() {
         if (gameWin) {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('spaceInvadersHighScore', highScore);
+            }
             stroke(0);
             strokeWeight(2);
             fill(color(0, 255, 0));
@@ -463,6 +506,7 @@ class UI {
             text("YOU WIN!", width / 2, height / 2 - 40);
             textSize(20);
             text("Final Score: " + score, width / 2, height / 2 + 20);
+            text("High Score: " + highScore, width / 2, height / 2 + 40);
             text("Press 'Y' to Continue", width / 2, height / 2 + 60);
         }
     }
@@ -497,8 +541,8 @@ function resetPlayer() {
 
 function restartGame(nextRound = false) {
     if (nextRound) {
-        // Increase alien speed by 10% each round
-        alienSpeed *= 1.1;
+        // Increase alien speed by 25% each round
+        alienSpeed *= 1.25;
         playerBullets = [];
         aliens = [];
         alienBullets = [];
